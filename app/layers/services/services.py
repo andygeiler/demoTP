@@ -1,19 +1,33 @@
-# capa de servicio/lógica de negocio
-
+import requests
 from ..persistence import repositories
 from ..utilities import translator
 from django.contrib.auth import get_user
 
 def getAllImages(input=None):
-    # obtiene un listado de datos "crudos" desde la API, usando a transport.py.
     json_collection = []
 
-    # recorre cada dato crudo de la colección anterior, lo convierte en una Card y lo agrega a images.
+    
+    response = requests.get("https://rickandmortyapi.com/api/character")
+    if response.status_code == 200:
+        json_collection = response.json()
+    else:
+        return []  
+
     images = []
+    for data in json_collection:
+        card = card(
+            name=data['name'],
+            status=data['status'],
+            url=data['image'],
+            last_location=data['location']['name'], 
+            first_seen=data['episode'][0]  
+        )
+        images.append(card)
 
     return images
 
-# añadir favoritos (usado desde el template 'home.html')
+
+
 def saveFavourite(request):
     fav = '' # transformamos un request del template en una Card.
     fav.user = '' # le asignamos el usuario correspondiente.
