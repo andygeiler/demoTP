@@ -139,4 +139,30 @@ table.table td i {
     float: left;
     margin-top: 6px;
     font-size: 95%;
+} 
+
+
+
+/* Círculo de estado */
+.status-circle {
+    display: inline-block;
+    width: 15px;  /* Ajusta el tamaño del círculo */
+    height: 15px; /* Ajusta el tamaño del círculo */
+    border-radius: 50%; /* Esto hace que el elemento sea circular */
+    margin-right: 5px; /* Espacio entre el círculo y el texto */
+}
+
+/* Círculo verde para 'Alive' */
+.green {
+    background-color: green;
+}
+
+/* Círculo rojo para 'Dead' */
+.red {
+    background-color: red;
+}
+
+/* Círculo naranja para 'Unknown' */
+.orange {
+    background-color: orange;
 }
