@@ -50,58 +50,14 @@ def home(request):
         return render(request, 'home.html', {'personajes': []})
 
 def search(request):
-    # Obtenemos el término de búsqueda desde el formulario
-    texto_busqueda = request.POST.get('query', '').strip()
+    search_msg = request.POST.get('query', '')
 
-    # Si no se ingresa texto, redirige a la página principal
-    if texto_busqueda == '':
-        return redirect('home')
-
-    # URL de la API con el filtro de búsqueda
-    url_api = f"https://rickandmortyapi.com/api/character/?name={texto_busqueda}"
-    respuesta = requests.get(url_api)
-
-    # Verificamos si la respuesta de la API fue exitosa
-    if respuesta.status_code == 200:
-        datos_personajes = respuesta.json().get('results', [])
-
-        # Procesamos los datos obtenidos
-        personajes = []
-        for personaje in datos_personajes:
-            datos = {
-                'nombre': personaje.get('name', 'Desconocido'),
-                'estado': personaje.get('status', 'Desconocido'),
-                'imagen': personaje.get('image', ''),
-                'ultima_ubicacion': personaje.get('location', {}).get('name', 'Desconocida'),
-                'primer_episodio': 'Desconocido'  # Valor predeterminado
-            }
-
-            # Obtenemos el nombre del primer episodio si existe
-            if 'episode' in personaje and len(personaje['episode']) > 0:
-                url_primer_episodio = personaje['episode'][0]
-                respuesta_episodio = requests.get(url_primer_episodio)
-                if respuesta_episodio.status_code == 200:
-                    datos_episodio = respuesta_episodio.json()
-                    datos['primer_episodio'] = datos_episodio.get('name', 'Desconocido')
-
-            personajes.append(datos)
+    # si el texto ingresado no es vacío, trae las imágenes y favoritos desde services.py,
+    # y luego renderiza el template (similar a home).
+    if (search_msg != ''):
+        pass
     else:
-        # Si no se encuentran resultados o hay un error
-        personajes = []
-
-    # Lista de favoritos del usuario (vacía si no está desarrollada)
-    lista_favoritos = []
-    if request.user.is_authenticated:
-        # Aquí puedes reemplazar con tu lógica real para obtener los favoritos del usuario
-        lista_favoritos = []  # Ejemplo: servicios.obtener_favoritos(request.user)
-
-    # Pasamos los datos al contexto
-    contexto = {
-        'personajes': personajes,
-        'favoritos': lista_favoritos,
-        'texto_busqueda': texto_busqueda
-    }
-    return render(request, 'home.html', contexto)
+        return redirect('home')
 
 
 # Estas funciones se usan cuando el usuario está logueado en la aplicación.
