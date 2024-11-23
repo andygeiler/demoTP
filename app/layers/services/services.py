@@ -3,40 +3,14 @@ from ..persistence import repositories
 from ..utilities import translator
 from django.contrib.auth import get_user
 
-def getAllImages(filtro=None):
-    # URL base de la API
-    url= "https://rickandmortyapi.com/api/character"
-    
-    # Si se pasa un filtro, lo añadimos a la URL
-    if filtro:
-        url += "?name=" + filtro
+def getAllImages(input=None):
+    # obtiene un listado de datos "crudos" desde la API, usando a transport.py.
+    json_collection = []
 
-    # Hacemos la solicitud a la API
-    respuesta = requests.get(url)
+    # recorre cada dato crudo de la colección anterior, lo convierte en una Card y lo agrega a images.
+    images = []
 
-    # Verificamos si la solicitud fue exitosa
-    if respuesta.status_code != 200:
-        return {"error": "No se pudo obtener la información"}
-
-    # Obtenemos los datos de la respuesta
-    datos = respuesta.json()
-
-    # Lista para guardar las tarjetas de los personajes
-    tarjetas = []
-
-    # Recorremos los personajes en los resultados
-    for personaje in datos['results']:
-        # Creamos una tarjeta con información básica del personaje
-        tarjeta = {
-            'nombre': personaje['name'],  # Nombre del personaje
-            'estado': personaje['status'],  # Estado (vivo, muerto, desconocido)
-            'especie': personaje['species'],  # Especie (humano, alien, etc.)
-            'imagen': personaje['image'],  # URL de la imagen
-            'descripcion': f"Estado: {personaje['status']}, Especie: {personaje['species']}"  # Descripción
-        }
-        tarjetas.append(tarjeta)  # Añadimos la tarjeta a la lista
-
-    return tarjetas
+    return images
 
 
 def saveFavourite(request):
