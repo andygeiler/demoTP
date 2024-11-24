@@ -8,9 +8,10 @@ urlpatterns = [
     path('home/', views.home, name='home'),
     path('buscar/', views.search, name='buscar'),
 
-    path('favourites/', views.getAllFavouritesByUser, name='favoritos'),
-    path('favourites/add/', views.saveFavourite, name='agregar-favorito'),
-    path('favourites/delete/', views.deleteFavourite, name='borrar-favorito'),
+    path('favourites/', views.getAllFavouritesByUser, name='favourites'),
+    path('favourites/add/', views.saveFavourite, name='saveFavourite'),
+    path('favourites/delete/', views.deleteFavourite, name='deleteFavourite'),
+    path('logout/', views.exit, name='exit'),  # Cerrar sesión
 
     path('exit/', views.exit, name='exit'),
 ]

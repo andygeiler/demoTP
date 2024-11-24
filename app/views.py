@@ -5,6 +5,8 @@ from .layers.services import services
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 import requests
+from django.http import JsonResponse
+from .models import Favourite
 
 def index_page(request):
     return render(request, 'index.html')
@@ -14,40 +16,50 @@ def index_page(request):
 def home(request):
     # URL de la API
     url_api = "https://rickandmortyapi.com/api/character"
-    
+
     # Hacemos la solicitud a la API
     respuesta = requests.get(url_api)
-    
+
     if respuesta.status_code == 200:  # Si la API responde correctamente
-        datos_personajes = respuesta.json()['results']  # Obtenemos los datos de los personajes
+        datos_personajes = respuesta.json().get('results', [])
 
         # Creamos una lista de personajes con la información necesaria
         personajes = []
         for personaje in datos_personajes:
-            # Obtenemos la ubicación y el primer episodio (si están disponibles)
-            ultima_ubicacion = personaje['location']['name'] if 'location' in personaje else 'Desconocida'
+            # Obtener ubicación y episodio inicial
+            ultima_ubicacion = personaje.get('location', {}).get('name', 'Desconocida')
             primer_episodio = 'Desconocido'
-            if 'episode' in personaje and len(personaje['episode']) > 0:
+
+            if personaje.get('episode'):
                 url_episodio = personaje['episode'][0]
                 respuesta_episodio = requests.get(url_episodio)
                 if respuesta_episodio.status_code == 200:
                     primer_episodio = respuesta_episodio.json().get('name', 'Desconocido')
 
-            # Agregamos el personaje a la lista
             personajes.append({
+                'id': personaje['id'],
                 'nombre': personaje['name'],
                 'estado': personaje['status'],
                 'imagen': personaje['image'],
                 'ultima_ubicacion': ultima_ubicacion,
                 'primer_episodio': primer_episodio,
+                'url': personaje['url'],
             })
 
-        # Enviamos los personajes al template
-        contexto = {'personajes': personajes}
+        # Obtener IDs de favoritos del usuario
+        favoritos_id = []
+        if request.user.is_authenticated:
+            favoritos_id = Favourite.objects.filter(user=request.user).values_list('url', flat=True)
+
+        # Enviamos los datos al template
+        contexto = {
+            'personajes': personajes,
+            'favoritos_id': list(favoritos_id),  # Convertimos QuerySet a lista para compatibilidad
+        }
         return render(request, 'home.html', contexto)
     else:
-        # Si hay un error, enviamos una lista vacía
-        return render(request, 'home.html', {'personajes': []})
+        # Si la API falla, renderizamos la página sin personajes
+        return render(request, 'home.html', {'personajes': [], 'favoritos_id': []})
 
 def search(request):
     
@@ -106,17 +118,51 @@ def search(request):
 
 @login_required
 def getAllFavouritesByUser(request):
-    favourite_list = []
-    return render(request, 'favourites.html', { 'favourite_list': favourite_list })
+    # Obtener los favoritos del usuario logueado
+    favourites = Favourite.objects.filter(user=request.user)
+    return render(request, 'favourites.html', {'favourite_list': favourites})
 
 @login_required
 def saveFavourite(request):
-    pass
+    if request.method == "POST":
+        # Obtenemos los datos del formulario
+        url = request.POST['url']
+        name = request.POST['name']
+        status = request.POST['status']
+        last_location = request.POST['last_location']
+        first_seen = request.POST['first_seen']
+
+        # Verificamos si ya existe el favorito
+        if not Favourite.objects.filter(user=request.user, url=url, name=name).exists():
+            # Creamos el favorito si no existe
+            Favourite.objects.create(
+                user=request.user,
+                url=url,
+                name=name,
+                status=status,
+                last_location=last_location,
+                first_seen=first_seen
+            )
+
+        # Redirigimos nuevamente al home
+        return redirect('home')
+    return redirect('home')
+
 
 @login_required
 def deleteFavourite(request):
-    pass
+    if request.method == "POST":
+        fav_id = request.POST.get('id')
+        try:
+            favorito = Favourite.objects.get(id=fav_id, user=request.user)
+            favorito.delete()
+            return redirect('favourites')  # Redirige a la página de favoritos después de eliminar
+        except Favourite.DoesNotExist:
+            return JsonResponse({'error': 'Favorito no encontrado'}, status=404)
+
+    return JsonResponse({'error': 'Método no permitido'}, status=405)
 
 @login_required
 def exit(request):
-    pass
+    logout(request)  # Esto cierra la sesión del usuario
+    return redirect('index-page')  # Redirige a la página de inicio 
