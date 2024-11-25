@@ -1,5 +1,3 @@
-# capa de vista/presentación
-
 from django.shortcuts import redirect, render
 from .layers.services import services
 from django.contrib.auth.decorators import login_required
@@ -11,22 +9,21 @@ from .models import Favourite
 def index_page(request):
     return render(request, 'index.html')
 
-# esta función obtiene 2 listados que corresponden a las imágenes de la API y los favoritos del usuario, y los usa para dibujar el correspondiente template.
-# si el opcional de favoritos no está desarrollado, devuelve un listado vacío.
+
 def home(request):
-    # URL de la API
+    
     url_api = "https://rickandmortyapi.com/api/character"
 
-    # Hacemos la solicitud a la API
+    
     respuesta = requests.get(url_api)
 
-    if respuesta.status_code == 200:  # Si la API responde correctamente
+    if respuesta.status_code == 200:  
         datos_personajes = respuesta.json().get('results', [])
 
-        # Creamos una lista de personajes con la información necesaria
+        
         personajes = []
         for personaje in datos_personajes:
-            # Obtener ubicación y episodio inicial
+            
             ultima_ubicacion = personaje.get('location', {}).get('name', 'Desconocida')
             primer_episodio = 'Desconocido'
 
@@ -46,75 +43,33 @@ def home(request):
                 'url': personaje['url'],
             })
 
-        # Obtener IDs de favoritos del usuario
+        
         favoritos_id = []
         if request.user.is_authenticated:
             favoritos_id = Favourite.objects.filter(user=request.user).values_list('url', flat=True)
 
-        # Enviamos los datos al template
+        
         contexto = {
             'personajes': personajes,
-            'favoritos_id': list(favoritos_id),  # Convertimos QuerySet a lista para compatibilidad
+            'favoritos_id': list(favoritos_id),  
         }
         return render(request, 'home.html', contexto)
     else:
-        # Si la API falla, renderizamos la página sin personajes
+        
         return render(request, 'home.html', {'personajes': [], 'favoritos_id': []})
 
 def search(request):
-    
-    texto_busqueda = request.POST.get('query', '').strip()
+    search_msg = request.POST.get('query', '')
 
-   
-    if texto_busqueda == '':
+    # si el texto ingresado no es vacío, trae las imágenes y favoritos desde services.py,
+    # y luego renderiza el template (similar a home).
+    if (search_msg != ''):
+        pass
+    else:
         return redirect('home')
 
-    
-    url_api = f"https://rickandmortyapi.com/api/character/?name={texto_busqueda}"
-    respuesta = requests.get(url_api)
 
-    
-    if respuesta.status_code == 200:
-        datos_personajes = respuesta.json().get('results', [])
-
-        
-        personajes = []
-        for personaje in datos_personajes:
-            datos = {
-                'nombre': personaje.get('name', 'Desconocido'),
-                'estado': personaje.get('status', 'Desconocido'),
-                'imagen': personaje.get('image', ''),
-                'ultima_ubicacion': personaje.get('location', {}).get('name', 'Desconocida'),
-                'primer_episodio': 'Desconocido'  
-            }
-
-            
-            if 'episode' in personaje and len(personaje['episode']) > 0:
-                url_primer_episodio = personaje['episode'][0]
-                respuesta_episodio = requests.get(url_primer_episodio)
-                if respuesta_episodio.status_code == 200:
-                    datos_episodio = respuesta_episodio.json()
-                    datos['primer_episodio'] = datos_episodio.get('name', 'Desconocido')
-
-            personajes.append(datos)
-    else:
-       
-        personajes = []
-
-    
-    lista_favoritos = []
-    if request.user.is_authenticated:
-        
-        lista_favoritos = []  
-
-    
-    contexto = {
-        'personajes': personajes,
-        'favoritos': lista_favoritos,
-        'texto_busqueda': texto_busqueda
-    }
-    return render(request, 'home.html', contexto)
-
+# Estas funciones se usan cuando el usuario está logueado en la aplicación.
 
 @login_required
 def getAllFavouritesByUser(request):
