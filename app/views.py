@@ -59,17 +59,58 @@ def home(request):
         return render(request, 'home.html', {'personajes': [], 'favoritos_id': []})
 
 def search(request):
-    search_msg = request.POST.get('query', '')
+    
+    texto_busqueda = request.POST.get('query', '').strip()
 
-    # si el texto ingresado no es vacío, trae las imágenes y favoritos desde services.py,
-    # y luego renderiza el template (similar a home).
-    if (search_msg != ''):
-        pass
-    else:
+    
+    if texto_busqueda == '':
         return redirect('home')
 
+    
+    url_api = f"https://rickandmortyapi.com/api/character/?name={texto_busqueda}"
+    respuesta = requests.get(url_api)
 
-# Estas funciones se usan cuando el usuario está logueado en la aplicación.
+    
+    if respuesta.status_code == 200:
+        datos_personajes = respuesta.json().get('results', [])
+
+        
+        personajes = []
+        for personaje in datos_personajes:
+            datos = {
+                'nombre': personaje.get('name', 'Desconocido'),
+                'estado': personaje.get('status', 'Desconocido'),
+                'imagen': personaje.get('image', ''),
+                'ultima_ubicacion': personaje.get('location', {}).get('name', 'Desconocida'),
+                'primer_episodio': 'Desconocido'  
+            }
+
+            
+            if 'episode' in personaje and len(personaje['episode']) > 0:
+                url_primer_episodio = personaje['episode'][0]
+                respuesta_episodio = requests.get(url_primer_episodio)
+                if respuesta_episodio.status_code == 200:
+                    datos_episodio = respuesta_episodio.json()
+                    datos['primer_episodio'] = datos_episodio.get('name', 'Desconocido')
+
+            personajes.append(datos)
+    else:
+        
+        personajes = []
+
+    
+    lista_favoritos = []
+    if request.user.is_authenticated:
+        
+        lista_favoritos = []  
+
+    
+    contexto = {
+        'personajes': personajes,
+        'favoritos': lista_favoritos,
+        'texto_busqueda': texto_busqueda
+    }
+    return render(request, 'home.html', contexto)
 
 @login_required
 def getAllFavouritesByUser(request):
