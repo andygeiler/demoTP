@@ -1,10 +1,10 @@
-from django.shortcuts import redirect, render
-from .layers.services import services
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth import logout
-import requests
-from django.http import JsonResponse
-from .models import Favourite
+from django.shortcuts import render, redirect, get_object_or_404  # Se importan las funciones necesarias para renderizar las vistas y redirigir
+from django.contrib.auth.decorators import login_required  # Importa el decorador que protege las vistas que requieren que el usuario esté autenticado
+from django.contrib.auth import logout  # Importa la función de logout para cerrar sesión
+from django.contrib import messages  # Importa el sistema de mensajes para mostrar notificaciones a los usuarios
+from .models import Favourite  # Importa el modelo Favourite, que probablemente gestiona los favoritos de los usuarios
+import requests  # Importa el módulo requests para hacer solicitudes HTTP, en caso de ser necesario
+from django.http import JsonResponse  # Importa JsonResponse para enviar respuestas JSON a las solicitudes AJAX o API
 
 def index_page(request):
     return render(request, 'index.html')
@@ -111,6 +111,29 @@ def search(request):
         'texto_busqueda': texto_busqueda
     }
     return render(request, 'home.html', contexto)
+
+@login_required
+def guardar_comentario(request):
+    if request.method == "POST":
+        # Obtener datos del formulario
+        favorito_id = request.POST.get('comment_id')  # Campo oculto que envía el ID del favorito
+        comentario = request.POST.get('new_comment')  # Campo que envía el nuevo comentario
+
+        # Verificar si el favorito pertenece al usuario
+        favorito = get_object_or_404(Favourite, id=favorito_id, user=request.user)
+
+        # Actualizar el comentario
+        favorito.comment = comentario  # Asegúrate de que el campo en tu modelo se llame 'comment'
+        favorito.save()
+
+        # Enviar mensaje de éxito
+        messages.success(request, "Comentario actualizado con éxito.")
+        return redirect('favourites')
+
+    # Redirigir en caso de que no sea un POST válido
+    messages.error(request, "Ocurrió un error al intentar actualizar el comentario.")
+    return redirect('favourites')
+
 
 @login_required
 def getAllFavouritesByUser(request):

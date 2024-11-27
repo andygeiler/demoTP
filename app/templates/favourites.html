@@ -2,6 +2,17 @@
 
 {% block content %}
 <main>
+    <div class="container mt-3">
+        <!-- Mostrar mensajes -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %}" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
     <h1 class="text-center">Mis Favoritos</h1>
 
     <table class="table">
@@ -10,6 +21,7 @@
                 <th scope="col">Nombre</th>
                 <th scope="col">Estado</th>
                 <th scope="col">Última Ubicación</th>
+                <th scope="col">Comentario</th>
                 <th scope="col">Acciones</th>
             </tr>
         </thead>
@@ -20,6 +32,16 @@
                     <td>{{ favorito.status }}</td>
                     <td>{{ favorito.last_location }}</td>
                     <td>
+                        <!-- Formulario para actualizar el comentario -->
+                        <form method="POST" action="{% url 'update_comment' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="comment_id" value="{{ favorito.id }}">
+                            <input type="text" name="new_comment" value="{{ favorito.comment }}" class="form-control">
+                            <button type="submit" class="btn btn-primary btn-sm mt-2">Actualizar</button>
+                        </form>
+                    </td>
+                    <td>
+                        <!-- Botón para eliminar el favorito -->
                         <form method="POST" action="{% url 'deleteFavourite' %}">
                             {% csrf_token %}
                             <input type="hidden" name="id" value="{{ favorito.id }}">
