@@ -6,27 +6,6 @@
 <main>
     <h1 class="text-center">Buscador Rick & Morty</h1>
 
-    <div class="d-flex justify-content-end" style="margin-bottom: 1%; margin-right: 2rem;">
-        <!-- Selector de página -->
-        <nav aria-label="...">
-            <ul class="pagination">
-                <li class="page-item disabled">
-                    <a class="page-link">⬅️</a>
-                </li>
-                <li class="page-item active" aria-current="page">
-                    <a class="page-link" href="#">1</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="#">2</a>
-                </li>
-                <li class="page-item"><a class="page-link" href="#">3</a></li>
-                <li class="page-item">
-                    <a class="page-link" href="#">➡️</a>
-                </li>
-            </ul>
-        </nav>
-    </div>
-
     <div class="d-flex justify-content-center" style="margin-bottom: 1%">
         <!-- Buscador del sitio -->
         <form class="d-flex" action="{% url 'buscar' %}" method="POST">
@@ -36,7 +15,6 @@
         </form>
     </div>
 
-    <!-- Ajuste de las columnas para las cards -->
     <div class="container">
         <div class="row row-cols-1 row-cols-md-3 g-4">
             {% if personajes|length == 0 %}
@@ -44,15 +22,11 @@
             {% else %}
                 {% for personaje in personajes %}
                     <div class="col">
-                        <div class="card h-100 mb-3 
-                            {% if personaje.estado == 'Alive' %}
-                                border-success
-                            {% elif personaje.estado == 'Dead' %}
-                                border-danger
-                            {% else %}
-                                border-warning
-                            {% endif %}
-                        " style="max-width: 540px;">
+                        <div class="card h-100 mb-3
+                            {% if personaje.estado == 'Alive' %} border-success 
+                            {% elif personaje.estado == 'Dead' %} border-danger 
+                            {% else %} border-warning {% endif %}"
+                            style="max-width: 540px;">
                             <div class="row g-0">
                                 <div class="col-md-4">
                                     <img src="{{ personaje.imagen }}" class="card-img-top" alt="imagen de {{ personaje.nombre }}" />
@@ -73,6 +47,26 @@
                                         </p>
                                         <p class="card-text"><small class="text-body-secondary">Última ubicación: {{ personaje.ultima_ubicacion }}</small></p>
                                         <p class="card-text"><small class="text-body-secondary">Episodio inicial: {{ personaje.primer_episodio }}</small></p>
+
+                                        {% if request.user.is_authenticated %}
+                                            {% if personaje.url in favoritos_id %}
+                                                <!-- Si ya está en favoritos -->
+                                                <button class="btn btn-secondary mt-2" disabled>Ya está en favoritos</button>
+                                            {% else %}
+                                                <!-- Botón para añadir a favoritos -->
+                                                <form method="post" action="{% url 'saveFavourite' %}">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="url" value="{{ personaje.url }}">
+                                                    <input type="hidden" name="name" value="{{ personaje.nombre }}">
+                                                    <input type="hidden" name="status" value="{{ personaje.estado }}">
+                                                    <input type="hidden" name="last_location" value="{{ personaje.ultima_ubicacion }}">
+                                                    <input type="hidden" name="first_seen" value="{{ personaje.primer_episodio }}">
+                                                    <button type="submit" class="btn btn-primary mt-2">Añadir a favoritos</button>
+                                                </form>
+                                            {% endif %}
+                                        {% else %}
+                                            <p class="mt-2">Inicia sesión para añadir a favoritos.</p>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
